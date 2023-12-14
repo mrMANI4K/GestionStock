@@ -1,6 +1,5 @@
-#!/usr/bin/env python 
-# -*- coding = utf-8 -*-
 from collections import deque
+import string
 
 class Alertes:
     alertes = deque([])
@@ -10,6 +9,10 @@ class Alertes:
         if nom_alerte not in Alertes.alertes:
             Alertes.alertes.append(nom_alerte)
 
+    def supprimer_alerte(nom_alerte):
+        if nom_alerte in Alertes.alertes:
+            Alertes.alertes.remove(nom_alerte)
+
     @staticmethod
     def afficher_alertes():
         if not Alertes.alertes:
@@ -18,6 +21,7 @@ class Alertes:
             print("Liste des alertes:")
             for alerte in Alertes.alertes:
                 print(f"ALERTE Produit: {alerte[0]}{alerte[1]}")
+
 
     #@staticmethod
     #def generer_alertes(seuil):
@@ -75,9 +79,21 @@ class GestionStock:
                 print(f"Produit: {cle_produit[0]}{cle_produit[1]}, Occurrences: {info_produit['occurrences']}, Stock: {info_produit['stock']}")
 
     def controle_inventaire(self):
+        
         for cle_produit, info_produit in self.inventaire.items():
             if self.inventaire[cle_produit]["occurrences"] < 2:
                 Alertes.ajouter_alerte(cle_produit)
+            if self.inventaire[cle_produit]["occurrences"] >= 2:
+                Alertes.supprimer_alerte(cle_produit)
+            
+
+        while len(Alertes.alertes) == 3:
+            print("trop d'alertes")
+            Alertes.afficher_alertes()
+            self.ajouter_produits(f"{Alertes.alertes[0][0]}{Alertes.alertes[0][1]}")
+            self.controle_inventaire()
+
+
 
 
 
