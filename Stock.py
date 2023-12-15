@@ -1,5 +1,4 @@
 from collections import deque
-from itertools import chain
 
 
 ###    La classe AlertesManagement gère les alertes relatives aux faibles occurrences de produits en stock.
@@ -33,6 +32,7 @@ class AlertesManagement:
 
 ###        Paramètres:
 ###            nom_alerte (str): Le nom de l'alerte à supprimer.
+    @staticmethod
     def supprimer_alerte(nom_alerte):
         if nom_alerte in AlertesManagement.alertes:
             AlertesManagement.alertes.remove(nom_alerte)
@@ -193,7 +193,6 @@ class GestionStock:
         except ValueError as e:
             print(e)
         finally:
-            pass
             return True
 
 
@@ -212,7 +211,6 @@ class GestionStock:
         except ValueError as e:
             print(e)
         finally:
-            pass
             return True
 
 
