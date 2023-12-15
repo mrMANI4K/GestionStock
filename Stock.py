@@ -83,7 +83,7 @@ class GestionStock:
 ###        Paramètres:
 ###            chaine_saisie (str): Une chaîne contenant les produits à ajouter.
     def ajouter_produits(self, chaine_saisie):
-        produits = separationChaine(chaine_saisie.upper())
+        produits = separation_chaine(chaine_saisie.upper())
         for produit in produits:
             if self.verification_entree(produit):
                 type_produit, volume = produit[0] , int(produit[:0:-1])
@@ -123,7 +123,7 @@ class GestionStock:
 ###        Retourne:
 ###            list: Une liste de produits assemblés.
     def assembler_colis(self, chaine_colis):
-        ids_colis = separationChaine(chaine_colis.upper())
+        ids_colis = separation_chaine(chaine_colis.upper())
         colis = []
         
         for id_colis in ids_colis:
@@ -222,7 +222,7 @@ class GestionStock:
 
 ###        Retourne:
 ###            bool: la fonction passée par .split().
-def separationChaine(chaine_entree):
+def separation_chaine(chaine_entree):
     return chaine_entree.split(", ")
 
 
@@ -234,7 +234,7 @@ def separationChaine(chaine_entree):
 
 ###        Retourne:
 ###            bool: la list des dictionnaires triées.
-def organisationColis(colis_a_trier):
+def organisation_colis(colis_a_trier):
     return sorted(colis_a_trier, key=lambda x: x['volume'])
 
 ###    Bloc Principal
@@ -269,7 +269,7 @@ while True:
     elif choix == "4":
         colis_a_assembler = input("veuillez saisir les produits pour assembler des colis : ")
         produits_assembles = gestion_stock.assembler_colis(colis_a_assembler)
-        colis_fini = organisationColis(produits_assembles)
+        colis_fini = organisation_colis(produits_assembles)
         gestion_stock.afficher_colis(colis_fini)
     elif choix == "5":
         print("programme termine. au revoir!")
