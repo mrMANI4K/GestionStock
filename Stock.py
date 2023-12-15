@@ -1,7 +1,8 @@
 from collections import deque
+from itertools import chain
 
 
-###    La classe Alertes gère les alertes relatives aux faibles occurrences de produits en stock.
+###    La classe AlertesManagement gère les alertes relatives aux faibles occurrences de produits en stock.
 
 ###    Attributs:
 ###        alertes (deque): Une file pour stocker les noms d'alertes.
@@ -10,7 +11,7 @@ from collections import deque
 ###        ajouter_alerte(nom_alerte): Ajoute une alerte à la file.
 ###        supprimer_alerte(nom_alerte): Supprime une alerte de la file.
 ###        afficher_alertes(): Affiche la liste des alertes.
-class Alertes:
+class AlertesManagement:
     alertes = deque([])
 
 
@@ -21,8 +22,8 @@ class Alertes:
 ###            nom_alerte (str): le nom de l'alerte à ajouter.
     @staticmethod
     def ajouter_alerte(nom_alerte):
-        if nom_alerte not in Alertes.alertes:
-            Alertes.alertes.append(nom_alerte)
+        if nom_alerte not in AlertesManagement.alertes:
+            AlertesManagement.alertes.append(nom_alerte)
 
 
 
@@ -33,8 +34,8 @@ class Alertes:
 ###        Paramètres:
 ###            nom_alerte (str): Le nom de l'alerte à supprimer.
     def supprimer_alerte(nom_alerte):
-        if nom_alerte in Alertes.alertes:
-            Alertes.alertes.remove(nom_alerte)
+        if nom_alerte in AlertesManagement.alertes:
+            AlertesManagement.alertes.remove(nom_alerte)
 
 
 
@@ -43,11 +44,11 @@ class Alertes:
 ###        Affiche la liste des alertes.
     @staticmethod
     def afficher_alertes():
-        if not Alertes.alertes:
+        if not AlertesManagement.alertes:
             print("aucune alerte.")
         else:
             print("liste des alertes:")
-            for alerte in Alertes.alertes:
+            for alerte in AlertesManagement.alertes:
                 print(f"alerte produit: {alerte[0]}{alerte[1]}")
 
 
@@ -82,7 +83,7 @@ class GestionStock:
 ###        Paramètres:
 ###            chaine_saisie (str): Une chaîne contenant les produits à ajouter.
     def ajouter_produits(self, chaine_saisie):
-        produits = chaine_saisie.upper().split(", ")
+        produits = separationChaine(chaine_saisie.upper())
         for produit in produits:
             if self.verification_entree(produit):
                 type_produit, volume = produit[0] , int(produit[:0:-1])
@@ -122,18 +123,19 @@ class GestionStock:
 ###        Retourne:
 ###            list: Une liste de produits assemblés.
     def assembler_colis(self, chaine_colis):
-        ids_colis = chaine_colis.upper().split(", ")
+        ids_colis = separationChaine(chaine_colis.upper())
         colis = []
+        
         for id_colis in ids_colis:
             if self.verification_entree(id_colis):
                 type_produit, volume = id_colis[:-1], int(id_colis[-1])
                 cle_produit = (type_produit, volume)
-                if cle_produit in self.inventaire and self.inventaire[cle_produit]["occurrences"] > 0:
-                    self.inventaire[cle_produit]["occurrences"] -= 1
-                    self.inventaire[cle_produit]["stock"].popleft()
-                    colis.append({"type_produit": type_produit, "volume": volume})
-                colis.sort(key=lambda x: x["volume"], reverse=True)
-                return colis
+                if self.verification_produit_existant(cle_produit):
+                    if cle_produit in self.inventaire and self.inventaire[cle_produit]["occurrences"] > 0:
+                        self.inventaire[cle_produit]["occurrences"] -= 1
+                        self.inventaire[cle_produit]["stock"].popleft()
+                        colis.append({"type_produit": type_produit, "volume": volume})
+            return colis
 
 
 
@@ -156,22 +158,21 @@ class GestionStock:
 ###        Contrôle l'inventaire et gère les alertes.
 
 ###        Paramètres:
-###            alertes (Alertes): Une instance de la classe Alertes.
+###            alertes (AlertesManagement): Une instance de la classe AlertesManagement.
     def controle_inventaire(self):
         
         for cle_produit, info_produit in self.inventaire.items():
             if self.inventaire[cle_produit]["occurrences"] < 2:
-                Alertes.ajouter_alerte(cle_produit)
+                AlertesManagement.ajouter_alerte(cle_produit)
             if self.inventaire[cle_produit]["occurrences"] >= 2:
-                Alertes.supprimer_alerte(cle_produit)
+                AlertesManagement.supprimer_alerte(cle_produit)
             
 
-        while len(Alertes.alertes) == 3:
-            print(f"!! trop d'alertes - l'alerte {Alertes.alertes[0][0]}{Alertes.alertes[0][1]} sera traitee automatiquement !!")
+        while len(AlertesManagement.alertes) > 2:
+            print(f"!! trop d'alertes - l'alerte {AlertesManagement.alertes[0][0]}{AlertesManagement.alertes[0][1]} sera traitee automatiquement !!")
             for curseur  in range(5):
-                self.ajouter_produits(f"{Alertes.alertes[0][0]}{Alertes.alertes[0][1]}")
+                self.ajouter_produits(f"{AlertesManagement.alertes[0][0]}{AlertesManagement.alertes[0][1]}")
             self.controle_inventaire()
-            Alertes.afficher_alertes()
 
 
 
@@ -188,26 +189,64 @@ class GestionStock:
     def verification_entree(self, array_entree):
         try:    
             if not array_entree[0].isalpha() or not array_entree[1].isnumeric():
-                raise ValueError('attention a saisir des valeurs valides')
+                raise ValueError('!! ATTENTION A SAISIR DES VALEURS VALIDES !!')
         except ValueError as e:
-            print(e.args)
+            print(e)
         finally:
             pass
             return True
 
 
 
+###        Valide l'entrée des colis.
+
+###        Paramètres:
+###            array_entree (str): Chaîne d'entrée pour un produit.
+
+###        Retourne:
+###            bool: True si l'entrée est valide, False sinon.
+    def verification_produit_existant(self, cle_produit_entree):
+        try:    
+            if cle_produit_entree not in self.inventaire:
+                raise ValueError('!! ATTENTION A SAISIR DES VALEURS EXISTANTES !!')
+        except ValueError as e:
+            print(e)
+        finally:
+            pass
+            return True
 
 
+
+###        Permet de Split les entrees.
+
+###        Paramètres:
+###            chaine_entree (str): Chaîne entrée par l'utilisateur.
+
+###        Retourne:
+###            bool: la fonction passée par .split().
+def separationChaine(chaine_entree):
+    return chaine_entree.split(", ")
+
+
+
+###        Permet de tier les colis.
+
+###        Paramètres:
+###            colis_a_trier (str): Colis saisi en entrée, qui vient d'etre créer.
+
+###        Retourne:
+###            bool: la list des dictionnaires triées.
+def organisationColis(colis_a_trier):
+    return sorted(colis_a_trier, key=lambda x: x['volume'])
 
 ###    Bloc Principal
 
-alertes_stock = Alertes()   # Création du Log d'Alertes
+alertes_stock = AlertesManagement()   # Création du Log d'AlertesManagement
 gestion_stock = GestionStock()  # Instantiation du Stock
-gestion_stock.ajouter_produits("a1, a1, b5, b5, b4, b4, c1, a2, c3, c3")  #Ajout en Brut
+gestion_stock.ajouter_produits("A1, A1, B5, B5, B4, B4, C1, A2, C3, C3")  #Ajout en Brut
 
 while True:
-    gestion_stock.controle_inventaire()  #Controle de l'inventaire pour les Alertes
+    gestion_stock.controle_inventaire()  #Controle de l'inventaire pour les AlertesManagement
 
 
     ###     Affichage du menu
@@ -232,7 +271,8 @@ while True:
     elif choix == "4":
         colis_a_assembler = input("veuillez saisir les produits pour assembler des colis : ")
         produits_assembles = gestion_stock.assembler_colis(colis_a_assembler)
-        gestion_stock.afficher_colis(produits_assembles)
+        colis_fini = organisationColis(produits_assembles)
+        gestion_stock.afficher_colis(colis_fini)
     elif choix == "5":
         print("programme termine. au revoir!")
         break
